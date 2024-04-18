@@ -17,14 +17,14 @@ print_color() {
 perform_port_scan() {
     DOMAIN=$1
     print_color "${YELLOW}" "Performing port scan on ${DOMAIN}..."
-    nmap -p- -T4 $DOMAIN
+    nmap -p- -T4 -oG - $DOMAIN | grep -Eo '[0-9]+/open' | cut -d '/' -f 1 | sort -n | xargs | tr ' ' ','
 }
 
 # Function to perform service version detection
 perform_service_scan() {
     DOMAIN=$1
     print_color "${YELLOW}" "Performing service scan on ${DOMAIN}..."
-    nmap -sV $DOMAIN
+    nmap -sV -T4 $DOMAIN | grep -Eo '^[0-9]+/tcp' | cut -d '/' -f 1 | sort -n | xargs | tr ' ' ','
 }
 
 # Function to perform vulnerability scan
@@ -46,10 +46,12 @@ main() {
     print_color "${GREEN}" "Starting scanning process for ${DOMAIN}..."
 
     # Perform port scan
-    perform_port_scan $DOMAIN
+    PORTS=$(perform_port_scan $DOMAIN)
+    print_color "${GREEN}" "Open ports found: ${PORTS}"
 
     # Perform service version detection
-    perform_service_scan $DOMAIN
+    SERVICES=$(perform_service_scan $DOMAIN)
+    print_color "${GREEN}" "Services detected on open ports: ${SERVICES}"
 
     # Perform vulnerability scan
     perform_vulnerability_scan $DOMAIN
